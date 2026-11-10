@@ -109,8 +109,17 @@ def curves(dets, n_gt):
     }
 
 
-def gt_attributes(gt, dust):
-    """Per test RSO: speed in px/frame from the MOT track, distance to nearest catalogue star."""
+def flux(img, x, y):
+    """Background-subtracted 5x5 sum. Peak DN is unusable here: most RSOs saturate the 8-bit range."""
+    x, y = int(round(x)), int(round(y))
+    patch = img[max(y - 2, 0):y + 3, max(x - 2, 0):x + 3].astype(np.float32)
+    bg = np.median(img[max(y - 7, 0):y + 8, max(x - 7, 0):x + 8])
+    return float(patch.sum() - bg * patch.size)
+
+
+def gt_attributes(gt, dust, data):
+    """Per test RSO: speed in px/frame from the MOT track, distance to nearest catalogue star, flux."""
+    import cv2
     mot = {}
     for sess in {g["session"] for g in gt}:
         rows = np.loadtxt(dust / "SET 1" / sess / "RSO_Annotations" / f"{sess}_MOT_gt.txt", delimiter=",", ndmin=2)
@@ -123,7 +132,9 @@ def gt_attributes(gt, dust):
         if corr.exists():
             df = pd.read_csv(corr)
             stars = df.loc[df.match_weight >= STAR_WEIGHT, ["index_x", "index_y"]].to_numpy()
+        img = cv2.imread(str(data / "V0" / "images" / "test" / f"{g['key']}.png"), cv2.IMREAD_GRAYSCALE)
         for r in g["rsos"]:
+            r["flux"] = flux(img, r["x"], r["y"])
             tid = min(here, key=lambda t: np.hypot(here[t][0] - r["x"], here[t][1] - r["y"])) if here else None
             nb = [m.get((g["frame"] + s, tid)) for s in (-1, 1)] if tid is not None else []
             nb = [c for c in nb if c is not None]
@@ -153,17 +164,18 @@ def main():
     args = ap.parse_args()
 
     gt = [g for g in json.loads((args.data / "gt.json").read_text()) if g["split"] == "test"]
-    gt_attributes(gt, args.dust)
+    gt_attributes(gt, args.dust, args.data)
     rsos = [(g, r) for g in gt for r in g["rsos"]]
     n_gt = len(rsos)
 
     peak = np.array([r["peak_dn"] for _, r in rsos], float)
+    bright = np.array([r["flux"] for _, r in rsos], float)
     speed = [r["speed"] for _, r in rsos]
-    bright_edges = [-np.inf, *np.percentile(peak, [100 / 3, 200 / 3]), np.inf]
+    bright_edges = [-np.inf, *np.percentile(bright, [100 / 3, 200 / 3]), np.inf]
     known_speed = np.array([s for s in speed if s is not None])
     speed_edges = [-np.inf, *np.percentile(known_speed, [100 / 3, 200 / 3]), np.inf]
     groups = {
-        "brightness": bin_index(list(peak), bright_edges),
+        "brightness": bin_index(list(bright), bright_edges),
         "speed": bin_index(speed, speed_edges),
         "star_distance": bin_index([r["star_dist"] for _, r in rsos], STAR_EDGES),
     }
@@ -218,7 +230,9 @@ def main():
     out = {
         "protocol": {"train": "SET 2 minus validation sessions", "val": prep["val_sessions"], "test": "all of SET 1",
                      "match_px": MATCH_PX, "conf_operating_point": CONF_OP, "std": "sample std over seeds (ddof=1)",
-                     "n_test_frames": len(gt), "n_test_rsos": n_gt, "sessions": sessions},
+                     "n_test_frames": len(gt), "n_test_rsos": n_gt, "sessions": sessions,
+                     "brightness_measure": "5x5 sum minus 15x15 median background, DN",
+                     "peak_dn_saturated_fraction": float((peak >= 255).mean())},
         "registration": {k: prep[k] for k in ["registration", "registration_fraction", "star_fit_err_px",
                                               "ecc_vs_stars_px", "no_corr_for_star_mask", "rso_in_star_mask"]},
         "bins": {n: {"edges": [None if not np.isfinite(e) else float(e) for e in edges[n]],

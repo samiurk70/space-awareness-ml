@@ -120,7 +120,7 @@ def fig_breakdowns(res, out):
     b = res["bins"]
     fig, ax = plt.subplots(figsize=(7, 4))
     grouped_recall(ax, res, "brightness", ["faint", "middle", "bright"],
-                   "Recall by RSO brightness tercile (peak DN, 5x5 window)")
+                   "Recall by RSO brightness tercile (background-subtracted 5x5 flux)")
     ax.legend(fontsize=8)
     fig.tight_layout()
     fig.savefig(out / "a_brightness.png", dpi=150)

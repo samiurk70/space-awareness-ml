@@ -32,9 +32,10 @@ def predict(run, data, variant):
         return json.loads(cache.read_text())
     from ultralytics import YOLO
     model = YOLO(str(run / "weights" / "best.pt"))
-    paths = sorted(str(p) for p in (data / variant / "images" / "test").glob("*.png"))
+    # a folder source streams in batches; a Python list is loaded and run as one batch of every image
     out = {}
-    for r in model.predict(paths, imgsz=640, conf=PRED_MIN_CONF, max_det=100, stream=True, verbose=False):
+    for r in model.predict(str(data / variant / "images" / "test"), imgsz=640, batch=16, conf=PRED_MIN_CONF,
+                           max_det=100, stream=True, verbose=False):
         xywh, conf = r.boxes.xywh.cpu().numpy(), r.boxes.conf.cpu().numpy()
         out[Path(r.path).stem] = [[round(float(b[0]), 2), round(float(b[1]), 2), round(float(c), 4)]
                                   for b, c in zip(xywh, conf)]

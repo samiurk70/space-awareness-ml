@@ -1,10 +1,18 @@
-# space-awareness-ml
+# Learning from star-tracker imagery and light curves
 
-Two studies on public data, by Samiur Rahman Khan, York University.
+Two studies on public data. One measures what a detector gains when the star tracker's own plate solution lines up the previous frame. The other measures how long a rocket-body light curve has to be watched, and whether a classifier can tell that the object is a type it never trained on.
 
-Both are about space situational awareness: noticing an object in orbit, and then deciding what it is. The first uses pictures from a star tracker. The second uses the way a rocket body brightens and dims as it tumbles. The questions are small on purpose, and the answers below are the measurements, including the places where an idea did not help.
+[![Interactive page](https://img.shields.io/badge/Interactive_page-live-2ea44f)](https://samiurk70.github.io/space-awareness-ml/)
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.14.1-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Ultralytics](https://img.shields.io/badge/Ultralytics-8.4.208-111111)](https://github.com/ultralytics/ultralytics)
+[![DUST data](https://img.shields.io/badge/DUST_data-CC_BY_4.0-yellow)](https://doi.org/10.5281/zenodo.20255672)
 
-The longer write-up is the page in `docs/index.html`. Every number on that page, and every number in the tables here, is read from the result files. Nothing in the tables was typed in by hand.
+[**Open the interactive page**](https://samiurk70.github.io/space-awareness-ml/) · [Repository](https://github.com/samiurk70/space-awareness-ml)
+
+Samiur Rahman Khan · GitHub: [samiurk70](https://github.com/samiurk70) · Scholar: [ddQa7D4AAAAJ](https://scholar.google.com/citations?user=ddQa7D4AAAAJ)
+
+Start with the page. It is the write-up: the sky frames, the sliders, and every reported number, read from the result files. This file is the same account in text, for anyone who wants the reasoning beside the figures.
 
 ## The two questions
 

@@ -1,0 +1,12 @@
+ultralytics
+opencv-python-headless
+numpy
+pandas
+scipy
+scikit-learn
+matplotlib
+motmetrics
+imageio
+huggingface_hub
+torch
+tqdm

@@ -1,0 +1,241 @@
+{
+  "frames": {
+    "test": 866,
+    "train": 392,
+    "val": 98
+  },
+  "rsos": {
+    "test": 2168,
+    "train": 1899,
+    "val": 116
+  },
+  "registration": {
+    "stars": 1028,
+    "ecc": 328
+  },
+  "registration_by_session": {
+    "2023_01_16": {
+      "stars": 40
+    },
+    "2023_01_21": {
+      "stars": 60,
+      "ecc": 15
+    },
+    "2023_01_25": {
+      "stars": 46,
+      "ecc": 6
+    },
+    "2023_03_31": {
+      "stars": 75,
+      "ecc": 63
+    },
+    "2023_05_31": {
+      "stars": 119,
+      "ecc": 8
+    },
+    "2023_06_03": {
+      "stars": 61,
+      "ecc": 29
+    },
+    "2023_06_20": {
+      "ecc": 36,
+      "stars": 2
+    },
+    "2023_07_19": {
+      "ecc": 14,
+      "stars": 99
+    },
+    "2023_08_04a": {
+      "stars": 23
+    },
+    "2023_08_04b": {
+      "stars": 59,
+      "ecc": 15
+    },
+    "2023_08_05a": {
+      "stars": 32,
+      "ecc": 2
+    },
+    "2023_08_05b": {
+      "stars": 32,
+      "ecc": 30
+    },
+    "2023_02_21": {
+      "stars": 39,
+      "ecc": 10
+    },
+    "2023_03_16": {
+      "stars": 27,
+      "ecc": 22
+    },
+    "2023_03_26": {
+      "ecc": 41,
+      "stars": 8
+    },
+    "2023_04_22": {
+      "ecc": 18,
+      "stars": 31
+    },
+    "2023_05_08": {
+      "stars": 49
+    },
+    "2023_05_10": {
+      "stars": 47,
+      "ecc": 2
+    },
+    "2023_06_05": {
+      "stars": 47,
+      "ecc": 2
+    },
+    "2023_06_19": {
+      "stars": 41,
+      "ecc": 8
+    },
+    "2023_07_20": {
+      "stars": 49
+    },
+    "2023_07_21": {
+      "stars": 42,
+      "ecc": 7
+    }
+  },
+  "no_corr_for_star_mask": 221,
+  "rso_in_star_mask": {
+    "inside": 88,
+    "total": 4183,
+    "fraction": 0.021037532871145112
+  },
+  "frames_without_yolo_file": 75,
+  "yolo_vs_mot_count_mismatch": 0,
+  "yolo_vs_mot_max_dist_px": 0.00032465520171861856,
+  "sessions": {
+    "2023_01_16": {
+      "set": "SET 1",
+      "split": "test",
+      "frames_used": 40
+    },
+    "2023_01_21": {
+      "set": "SET 1",
+      "split": "test",
+      "frames_used": 75
+    },
+    "2023_01_25": {
+      "set": "SET 1",
+      "split": "test",
+      "frames_used": 52
+    },
+    "2023_03_31": {
+      "set": "SET 1",
+      "split": "test",
+      "frames_used": 138
+    },
+    "2023_05_31": {
+      "set": "SET 1",
+      "split": "test",
+      "frames_used": 127
+    },
+    "2023_06_03": {
+      "set": "SET 1",
+      "split": "test",
+      "frames_used": 90
+    },
+    "2023_06_20": {
+      "set": "SET 1",
+      "split": "test",
+      "frames_used": 38
+    },
+    "2023_07_19": {
+      "set": "SET 1",
+      "split": "test",
+      "frames_used": 113
+    },
+    "2023_08_04a": {
+      "set": "SET 1",
+      "split": "test",
+      "frames_used": 23
+    },
+    "2023_08_04b": {
+      "set": "SET 1",
+      "split": "test",
+      "frames_used": 74
+    },
+    "2023_08_05a": {
+      "set": "SET 1",
+      "split": "test",
+      "frames_used": 34
+    },
+    "2023_08_05b": {
+      "set": "SET 1",
+      "split": "test",
+      "frames_used": 62
+    },
+    "2023_02_21": {
+      "set": "SET 2",
+      "split": "train",
+      "frames_used": 49
+    },
+    "2023_03_16": {
+      "set": "SET 2",
+      "split": "train",
+      "frames_used": 49
+    },
+    "2023_03_26": {
+      "set": "SET 2",
+      "split": "train",
+      "frames_used": 49
+    },
+    "2023_04_22": {
+      "set": "SET 2",
+      "split": "train",
+      "frames_used": 49
+    },
+    "2023_05_08": {
+      "set": "SET 2",
+      "split": "train",
+      "frames_used": 49
+    },
+    "2023_05_10": {
+      "set": "SET 2",
+      "split": "val",
+      "frames_used": 49
+    },
+    "2023_06_05": {
+      "set": "SET 2",
+      "split": "train",
+      "frames_used": 49
+    },
+    "2023_06_19": {
+      "set": "SET 2",
+      "split": "train",
+      "frames_used": 49
+    },
+    "2023_07_20": {
+      "set": "SET 2",
+      "split": "val",
+      "frames_used": 49
+    },
+    "2023_07_21": {
+      "set": "SET 2",
+      "split": "train",
+      "frames_used": 49
+    }
+  },
+  "registration_fraction": {
+    "stars": 0.7581120943952803,
+    "ecc": 0.24188790560471976
+  },
+  "star_fit_err_px": {
+    "median": 0.36059331358089086,
+    "p95": 0.47856620392668653,
+    "n": 1028
+  },
+  "ecc_vs_stars_px": {
+    "median": 0.876775267210526,
+    "p95": 1.7362098455641977,
+    "n": 1028
+  },
+  "val_sessions": [
+    "2023_05_10",
+    "2023_07_20"
+  ]
+}

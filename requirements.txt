@@ -1,4 +1,4 @@
-ultralytics
+ultralytics==8.4.208
 opencv-python-headless
 numpy
 pandas

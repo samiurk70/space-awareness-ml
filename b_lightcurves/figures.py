@@ -44,17 +44,18 @@ def fig_heatmap(res, out):
     t = res["loco"]["table"]
     rows, cols = list(t), res["protocol"]["scores"]
     m = np.array([[t[r]["auroc"][c]["mean"] for c in cols] for r in rows])
-    fig, ax = plt.subplots(figsize=(9, 5))
-    im = ax.imshow(m, vmin=0.5, vmax=1.0, cmap="viridis")
+    fig, ax = plt.subplots(figsize=(9.4, 5.4))
+    im = ax.imshow(m, vmin=0.3, vmax=1.0, cmap="viridis")
     for i, r in enumerate(rows):
         for j, c in enumerate(cols):
             s = t[r]["auroc"][c]
             ax.text(j, i, f"{s['mean']:.2f}\n±{s['std']:.2f}", ha="center", va="center", fontsize=8,
-                    color="w" if s["mean"] < 0.8 else "k")
-    ax.set_xticks(range(len(cols)), [SCORE_LABEL[c] for c in cols], fontsize=9)
+                    color="w" if s["mean"] < 0.75 else "k")
+    ax.set_xticks(range(len(cols)), ["Max\nsoftmax", "Max\nlogit", "Energy", "Mahalanobis", "kNN\n(k=10)"], fontsize=9)
     ax.set_yticks(range(len(rows)), rows, fontsize=9)
     ax.set_ylabel("Held-out (unknown) class")
-    fig.colorbar(im, ax=ax, label="AUROC, unknown vs known")
+    cb = fig.colorbar(im, ax=ax, label="AUROC, unknown vs known. White line: chance (0.5)")
+    cb.ax.axhline(0.5, color="w", lw=1.5)
     ax.set_title("Open-set detection, leave-one-class-out, full 1,000 s, mean ± std over seeds", fontsize=10)
     fig.tight_layout()
     fig.savefig(out / "b_openset_heatmap.png", dpi=150)
@@ -66,13 +67,15 @@ def fig_budget(res, out):
         b = res["closed_set"]["budget"]
         s = sorted(b, key=int)
         axes[0].errorbar([int(x) for x in s], [b[x]["accuracy"]["mean"] for x in s],
-                         [b[x]["accuracy"]["std"] for x in s], marker="o", capsize=3, label="closed-set, 6 classes")
+                         [b[x]["accuracy"]["std"] for x in s], marker="o", capsize=3,
+                         label="closed-set, 6 classes (bars: std over 3 seeds)")
     if "loco" in res:
         b = res["loco"]["budget"]
         s = sorted(b, key=int)
         axes[0].errorbar([int(x) for x in s], [b[x]["known_accuracy"]["mean"] for x in s],
                          [b[x]["known_accuracy"]["std"] for x in s], marker="s", capsize=3,
-                         label="known classes, leave-one-out models")
+                         label="known classes, 5-class leave-one-out models\n(bars: spread over 6 held-out classes x 3 seeds)")
+        axes[1].set_title("bars: spread over 6 held-out classes x 3 seeds", fontsize=9)
         for n in res["protocol"]["scores"]:
             best = n == res["loco"]["best_score"]
             axes[1].errorbar([int(x) for x in s], [b[x]["auroc"][n]["mean"] for x in s],

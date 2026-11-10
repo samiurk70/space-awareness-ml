@@ -95,7 +95,8 @@ def main():
     budgets = sorted({int(s) for r in runs for s in r["budget"]})
     out = {"protocol": {"split": "RoBo6 train.csv / test.csv as released", "budgets_s": budgets,
                         "scores": SCORES, "fpr95": "unknowns accepted at 95% known acceptance",
-                        "std": "sample std over seeds (ddof=1)",
+                        "std": "sample standard deviation over 3 seeds. On the leave-one-out budget curves the "
+                               "spread is over 6 held-out classes times 3 seeds, so it mostly reflects which class was held out",
                         "note": "the released CSVs contain 128 train and 27 test exact duplicate rows; kept so "
                                 "counts match the paper"},
            "paper": PAPER}

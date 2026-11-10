@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Learning from star-tracker imagery and light curves</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Orbitron:wght@500;600&family=Source+Sans+3:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/page.css">
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Learning from <span class="nowrap">star-tracker</span> imagery and light curves</h1>
+      <p>Two studies on public data. One measures what a detector gains when the star tracker’s own plate solution aligns the previous frame before subtraction. The other measures how long a rocket-body light curve has to be observed, and whether a classifier can tell that the object is a type it never trained on.</p>
+      <p class="contents">
+        <a href="#detection">Detection</a>
+        <a href="#curves">Light curves</a>
+        <a href="#notes">Notes</a>
+        <a href="https://github.com/samiurk70/space-awareness-ml">Repository</a>
+      </p>
+    </header>
+
+    <p id="err" hidden></p>
+    <noscript><p>This page fills every number from the result files. Enable JavaScript to read them.</p></noscript>
+
+    <main>
+      <section id="detection">
+        <p class="label">01 · Detection</p>
+        <h2>Star-registered differencing on DUST</h2>
+        <p>The frames come from the Fast Auroral Imager on CASSIOPE. A star and a resident space object are both an unresolved dot. The DUST paper reports that a classifier on a 15 by 15 patch reaches only ROC-AUC 0.72 to 0.75, and that separating them needs motion across frames.</p>
+        <p>OrbitTrack stacks the previous raw frame with the current one and lets the network learn that motion. FAI is spin-stabilised, so the stars move as well. The star tracker has already plate-solved them. Here, frame t-1 is aligned onto frame t with that solution, the two are subtracted, and a catalogue star mask can be added as a third channel.</p>
+        <p>The question is how much of the recall gap was the detector having to learn the spacecraft’s own motion. Training follows OrbitTrack’s split: SET 2, with <span id="valSessions">two sessions</span> held out, tested on all of SET 1. Consecutive frames are not split at random. The first frame of every session is dropped. The test set is <span id="nFrames"></span> frames and <span id="nRsos"></span> objects. A detection matches a label when the centres are within <span id="matchPx"></span> px. Headline numbers are the mean ± sample standard deviation over 3 seeds, at confidence <span id="opConf"></span>.</p>
+
+        <figure>
+          <img src="assets/figures/a_method.png" alt="Four panels of one FAI frame: the raw frame, the previous frame overlaid, the registered residual, and the catalogue star mask. Amber circles mark labelled objects.">
+          <figcaption>One test frame. Left to right: raw frame t, frame t-1 in magenta over t in green, the residual after star registration, the catalogue star mask. Amber circles are ground truth.</figcaption>
+        </figure>
+
+        <h3>Same detector, four inputs</h3>
+        <ul class="legend">
+          <li><i class="v0"></i>V0 single frame</li>
+          <li><i class="v1"></i>V1 raw pair</li>
+          <li><i class="v2"></i>V2 registered residual</li>
+          <li><i class="v3"></i>V3 residual and star mask</li>
+        </ul>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Input</th>
+                <th class="num">Precision</th>
+                <th class="num">Recall</th>
+                <th class="num">F1</th>
+                <th class="num">AP</th>
+              </tr>
+            </thead>
+            <tbody id="ablation"></tbody>
+            <tbody id="context"></tbody>
+          </table>
+        </div>
+        <p class="fine">Context rows are copied from other papers. They are not this protocol. mAP50 on the inflated 6 px boxes, which is not the centroid metric: <span id="mapNote"></span></p>
+        <svg id="seeds" viewBox="0 0 640 108" role="img" aria-label="F1 of each seed"></svg>
+        <p class="fine">Each dot is one seed. The tick is the mean. Star matches registered <span id="starFrac"></span> of prepared frames, with a median fit error of <span id="starErr"></span> px. The rest used the high-pass ECC fallback.</p>
+
+        <div class="lab" id="lab-a">
+          <h3>Move the confidence</h3>
+          <p>The table above is the reported point. The slider reads the curves that were stored at every confidence from 0.01 to 0.99, mean ± std over the 3 seeds. The sky frames underneath are seed 0 only, for two sessions.</p>
+          <div class="controls">
+            <label>Confidence <output id="confOut" class="mono"></output>
+              <input id="conf" type="range" min="0" max="98" step="1" value="24" aria-describedby="confState">
+            </label>
+            <span id="confState" class="state"></span>
+            <button type="button" id="resetA">Reset to reported point</button>
+          </div>
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr><th>Input</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th></tr>
+              </thead>
+              <tbody id="live"></tbody>
+            </table>
+          </div>
+          <canvas id="confChart" aria-label="F1 against confidence for four inputs"></canvas>
+          <p class="fine">F1 against confidence. The solid vertical line is the slider. A dotted line stays on the reported confidence once you move away.</p>
+
+          <div class="controls">
+            <label>Session
+              <select id="session"></select>
+            </label>
+            <label>Frame
+              <input id="frame" type="range" min="0" value="0">
+            </label>
+            <span id="frameLabel" class="mono"></span>
+            <button type="button" id="play">Play</button>
+            <label><input id="residual" type="checkbox"> Residual</label>
+            <label><input id="trails" type="checkbox"> Trails</label>
+            <span>
+              <button type="button" data-layer="v3" aria-pressed="true">V3</button>
+              <button type="button" data-layer="v0" aria-pressed="false">V0</button>
+              <button type="button" data-layer="both" aria-pressed="false">Both</button>
+            </span>
+          </div>
+          <div class="stage">
+            <canvas id="sky" aria-label="Star-tracker frame with detections"></canvas>
+          </div>
+          <p id="skyMeta" class="readout"></p>
+          <p id="hover" class="fine">Move over the frame. Rings are ground truth. Filled marks matched within the match radius. Open marks did not.</p>
+          <p class="fine">Trails are the published tracker on V3 seed 0 at confidence 0.25. They do not follow the slider. The residual is already aligned to frame t, so the marks stay in the same place.</p>
+        </div>
+
+        <h3>Where the recall comes from</h3>
+        <div class="controls" id="barMode">
+          <button type="button" data-kind="brightness" aria-pressed="true">Brightness</button>
+          <button type="button" data-kind="speed" aria-pressed="false">Speed</button>
+          <button type="button" data-kind="star_distance" aria-pressed="false">Distance to a star</button>
+        </div>
+        <svg id="bars" viewBox="0 0 640 230" role="img" aria-label="Recall by bin"></svg>
+        <p id="barNote" class="fine"></p>
+
+        <figure>
+          <img src="assets/figures/a_pr.png" alt="Precision-recall curves for V0, V1, V2 and V3." loading="lazy">
+          <figcaption>Precision-recall envelope, mean over seeds. The slider above walks the operating point along these curves.</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/figures/a_brightness.png" alt="Recall by brightness third for each input variant." loading="lazy">
+          <figcaption>Recall by background-subtracted 5 by 5 flux. Peak DN is not used: <span id="satFrac"></span> of labelled objects saturate at 255.</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/figures/a_speed_stars.png" alt="Recall by speed third and by distance to the nearest catalogue star." loading="lazy">
+          <figcaption>Recall by speed, and by distance to the nearest catalogue star.</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/figures/a_tracks.gif" alt="Animation of tracked objects on a session of FAI frames." loading="lazy">
+          <figcaption>Published tracking animation, V3 seed 0, confidence 0.25. MOTA <span id="mota"></span>, IDF1 <span id="idf1"></span>, <span id="switches"></span> identity switches, <span id="nObj"></span> objects.</figcaption>
+        </figure>
+
+        <div class="note">
+          <h3>What this shows</h3>
+          <ul id="honestA"></ul>
+          <p><button type="button" id="jumpFail">Open the weak session in the viewer</button></p>
+        </div>
+      </section>
+
+      <section id="curves">
+        <p class="label">02 · Light curves</p>
+        <h2>Open-set recognition on RoBo6</h2>
+        <p>A classifier trained on six rocket bodies will meet a seventh. Hwang, Suthakar, Qashoa, Lee and Sohn, in Aerospace (2026), review that gap between a fixed label set and what shows up in orbit.</p>
+        <p>This study trains a 1D ResNet on the released RoBo6 split. The input is a standardised magnitude and a mask of the samples that were actually observed. Training crops a random window. At test the curve is cut to its first N seconds, so later samples cannot leak in. Unknown scores are computed after training: max softmax, max logit, energy, Mahalanobis distance, and a kNN (k = 10) on the embedding.</p>
+        <p id="bNote"></p>
+
+        <figure>
+          <img src="assets/figures/b_example.png" alt="One training light curve for each of the six rocket-body classes." loading="lazy">
+          <figcaption>One training light curve per class, the one with the most observed samples. Magnitude increases downward.</figcaption>
+        </figure>
+
+        <h3>Closed set, full 1,000 s</h3>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr><th>Model</th><th class="num">Accuracy</th><th class="num">Macro-F1</th><th>Source</th></tr>
+            </thead>
+            <tbody id="closed"></tbody>
+          </table>
+        </div>
+        <p class="fine">Seed 0 confusion, rows sum to 1. Hover a cell.</p>
+        <div class="scroll"><table id="confusion"></table></div>
+
+        <div class="lab" id="lab-b">
+          <h3>Shorten the observation</h3>
+          <p>Each stop keeps only the first N seconds of every test curve. The reported result is the full series. The bars in the figure are not all the same kind of spread: closed-set bars are the 3 seeds, and the leave-one-out bars mix 6 held-out classes with 3 seeds.</p>
+          <div class="controls">
+            <label>Seconds
+              <input id="budget" type="range" min="0" step="1" value="0">
+            </label>
+            <span id="budgetState" class="state"></span>
+            <button type="button" id="resetB">Reset to full series</button>
+          </div>
+          <p id="budgetRead" class="readout"></p>
+          <canvas id="budgetChart" aria-label="Accuracy and unknown detection against seconds observed"></canvas>
+          <p class="fine" id="covNote"></p>
+          <figure>
+            <img src="assets/figures/b_budget.png" alt="Accuracy and unknown-detection AUROC against seconds observed, with error bars." loading="lazy">
+            <figcaption>Same budgets. Closed-set bars are the standard deviation over 3 seeds. Leave-one-out bars are the spread over 6 held-out classes times 3 seeds, so they are wide because some classes are hard, not because the seeds disagree. The orange curve is a 5-class accuracy and is not comparable to the blue 6-class accuracy.</figcaption>
+          </figure>
+        </div>
+
+        <h3>Which unknown score, on which class</h3>
+        <p>Each cell is one class held out of training. The number is AUROC for telling that class from the classes the model did see. 0.50 is chance. Click a cell. The histogram is seed 0 only. Mean AUROC over the six classes, at 1,000 s: <span id="meanScores"></span>. Best average score: <span id="bestScore"></span>.</p>
+        <div class="scroll"><table id="heat"></table></div>
+        <p id="heatRead" class="readout"></p>
+        <canvas id="hist" aria-label="Score histogram for known and held-out objects"></canvas>
+        <p class="fine">Known objects in grey, the held-out class in amber. Densities from seed 0, on one vertical scale.</p>
+
+        <figure>
+          <img src="assets/figures/b_embedding.png" alt="PCA of test embeddings with the held-out class marked as crosses." loading="lazy">
+          <figcaption>Test embeddings for the held-out class whose kNN score sits in the middle of the six. Crosses were never in training. One seed, one fold.</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/figures/b_openset_heatmap.png" alt="Heatmap of unknown-detection AUROC for six held-out classes and five scores." loading="lazy">
+          <figcaption>Static copy of the table above. The white line on the colour bar is chance, 0.50. Cells under that line are worse than a coin toss.</figcaption>
+        </figure>
+
+        <div class="note">
+          <h3>What this shows</h3>
+          <ul id="honestB"></ul>
+        </div>
+      </section>
+
+      <section id="notes">
+        <p class="label">03 · Notes</p>
+        <h2>Method</h2>
+        <ul>
+          <li>Stars are matched across frames on catalogue right ascension and declination. The per-frame index id is not stable, so it is not used.</li>
+          <li>When fewer than four stars agree, alignment falls back to ECC on a high-pass image. Identity is the last resort.</li>
+          <li>Detection is scored by centroid distance, 3 px, greedy in confidence order. Box mAP50 is reported only as a secondary number, on boxes inflated to 6 px.</li>
+          <li>Brightness is the 5 by 5 sum minus the local 15 by 15 median. Peak DN is saturated for most objects, so it is not the binning measure.</li>
+          <li>The tracker is constant velocity. The gate is 6 px, or 15 px on a track’s first link. A track dies after 2 missed frames and is kept if it has at least 3 points. MOTA and IDF1 use motmetrics at 3 px, on V3 seed 0.</li>
+          <li>The detector is YOLO11n, ultralytics 8.4.208, with the default colour augmentations turned off. Channels are not colours.</li>
+          <li>The light-curve network pools only the timesteps that were observed. <span id="dupNote"></span></li>
+          <li>Training ran on a Colab T4. Every run takes a seed. The published Project A numbers are the first completed training of all 12 runs.</li>
+        </ul>
+        <h2>Not done here</h2>
+        <ul>
+          <li>An event-camera spiking detector (EBSSA). Future work.</li>
+          <li>Sim-to-real pretraining with SatSim. Future work.</li>
+          <li>Onboard INT8 deployment. Future work.</li>
+          <li>A single unknown score that uses both the classifier output and the embedding. The heatmap says the two families fail on different classes, so this is the obvious next measurement.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      <h2>Sources and licences</h2>
+      <ol>
+        <li>Suthakar, Kunalakantha, Lee, and Sohn. An On-Orbit Star Tracker Benchmark for Resident Space Object Detection and Attitude Estimation. Scientific Data, 2026. <a href="https://doi.org/10.1038/s41597-026-07736-9">doi:10.1038/s41597-026-07736-9</a>. Data: <a href="https://doi.org/10.5281/zenodo.20255672">Zenodo 10.5281/zenodo.20255672</a>, CC BY 4.0. The frames in the viewer are from this dataset.</li>
+        <li>Jeong, Suthakar, Qashoa, Sohn, and Lee. OrbitTrack: Advanced RSO Detection and Tracking from Wide Field-of-View On-Orbit Images. Advances in Space Research, 2025. <a href="https://doi.org/10.1016/j.asr.2025.08.006">doi:10.1016/j.asr.2025.08.006</a>.</li>
+        <li>Kyselica, Šuppa, Šilha, and Ďurikovič. RoBo6: Standardized MMT Light Curve Dataset for Rocket Body Classification. NeurIPS 2024 ML4PS workshop. <a href="https://arxiv.org/abs/2412.00544">arXiv:2412.00544</a>. Dataset: <a href="https://huggingface.co/datasets/kyselica/RoBo6">kyselica/RoBo6</a>, MIT.</li>
+        <li>Hwang, Suthakar, Qashoa, Lee, and Sohn. Light-Curve Classification of Resident Space Objects for Space Situational Awareness: A Scoping Review. Aerospace, 2026. <a href="https://doi.org/10.3390/aerospace13030287">doi:10.3390/aerospace13030287</a>.</li>
+      </ol>
+      <p class="fine">Detector weights are produced with ultralytics, AGPL-3.0. Numbers on this page are read from <span class="mono">a_results.json</span>, <span class="mono">b_results.json</span>, and the frame export. They are not typed in.</p>
+      <p class="fine"><a href="https://github.com/samiurk70/space-awareness-ml">github.com/samiurk70/space-awareness-ml</a></p>
+    </footer>
+  </div>
+  <script src="assets/page.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+ "n_test": 1404,
+ "median_last_observed_s": 577.2,
+ "fraction_last_obs_before_600s": 0.5292022792022792,
+ "fraction_with_any_point_after_s": {
+  "300": 0.7905982905982906,
+  "600": 0.4707977207977208,
+  "900": 0.15527065527065528
+ }
+}
